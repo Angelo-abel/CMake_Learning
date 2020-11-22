@@ -1,0 +1,248 @@
+cmake_minimum_required(VERSION 3.10.2)
+
+# 设置编译器需要在最上面
+set(CMAKE_C_COMPILER /opt/buildtools/llvm-project/llvm/build/bin/clang CACHE STRING "clang++ compiler" FORCE)
+set(CMAKE_CXX_COMPILER /opt/buildtools/llvm-project/llvm/build/bin/clang++ CACHE STRING "clang++ compiler" FORCE)
+
+project(c_demo)
+# 设置CMAKE_MAKEFILE需要在下面
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_ENABLE_EXPORTS ON)
+string(APPEND CMAKE_C_FLAGS " -fPIC")
+string(APPEND CMAKE_CXX_FLAGS " -fPIC")
+
+aux_source_directory(. SRC_LIST)
+add_compile_options(-DHELLO)
+
+add_library(demo OBJECT ${SRC_LIST})
+add_executable(demo1 $<TARGET_OBJECTS:demo>)
+
+target_compile_options(demo1
+  PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+)
+
+#target_compile_definitions(demo1
+#  PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fno-pie>
+#          $<$<COMPILE_LANG_AND_ID:CXX,Intel>:-fno-pie>
+#          $<$<COMPILE_LANG_AND_ID:C,Clang>:-fno-pie>
+#)
+
+add_custom_target(print_platform
+COMMAND  ${CMAKE_COMMAND} -E echo "$<PLATFORM_ID>"
+DEPENDS demo1
+)
+
+# 这个需要在target_compile_options中shiyong
+# add_custom_target(print_c_compiler
+# COMMAND  ${CMAKE_COMMAND} -E echo "$<C_COMPILER_ID>"
+# DEPENDS demo1
+# )
+
+# 如果获取当前对象依赖哪些连接路径和依赖哪些生成的对象
+add_custom_target(print_fullpath
+COMMAND  ${CMAKE_COMMAND} -E echo "$<TARGET_FILE:demo1>"
+DEPENDS demo1
+)
+
+add_custom_target(print_link_dir
+COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_LINKER_FILE_DIR:demo1>"
+DEPENDS demo1
+)
+
+set_property(TARGET demo1 APPEND PROPERTY GENERATE_NEW "generator expression")
+set_property(TARGET demo1 PROPERTY
+  CUSTOM_KEYS $<$<CONFIG:RELEASE>:"DENMOEMO">
+)
+
+add_custom_target(print_keys
+COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_NAME:demo1>"
+DEPENDS demo1
+)
+
+add_custom_target(print_debug_config
+COMMAND ${CMAKE_COMMAND} -E echo "$<$<CONFIG:Debug>:DEBUG_MODE>"
+)
+
+# 生成器表达式测试成功
+add_custom_target(print_debug_relase
+COMMAND ${CMAKE_COMMAND} -E echo "$<$<NOT:$<CONFIG:Debug>>:DEBUG_MODE>"
+)
+
+add_custom_target(print_bool
+COMMAND ${CMAKE_COMMAND} -E echo "$<$<NOT:$<BOOL:0>>:BOOL_GENERATOR_EXPRESSION>"
+)
+
+add_custom_target(print_strequal
+COMMAND ${CMAKE_COMMAND} -E echo "$<$<NOT:$<STREQUAL:\"hello\", \"hello\">>:BOOL_GENERATOR_EXPRESSION>"
+)
+
+add_custom_target(print_AND
+COMMAND ${CMAKE_COMMAND} -E echo "$<$<NOT:$<AND:0, 1>>:AND_GENERATOR_EXPRESSION>"
+)
+
+#set(l4 "a b c d")
+#add_custom_target(print_inlist
+#COMMAND ${CMAKE_COMMAND} -E echo "$<$<NOT:$<IN_LIST:e, l4>>:INLIST_GENERATOR_EXPRESSION>"
+#)
+
+#add_custom_target(custom_target
+#COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_PROPERTY:demo1,CUSTOM_KEYS>"
+#DEPENDS demo1
+#)
+# LIST相关操作使用总结
+set(ll "")
+list(APPEND ll a b c)
+message(STATUS "${ll}")
+list(LENGTH ll len)
+message(STATUS "${len}")
+list(FIND ll a out_a)
+# 查找索引坐标
+message(STATUS "${out_a}")
+list(INSERT ll 0 a b v)
+message(STATUS "${ll}")
+list(REMOVE_DUPLICATES ll)
+message(STATUS "${ll}")
+list(SORT ll)
+message(STATUS "${ll}")
+list(REVERSE ll)
+message(STATUS "${ll}")
+list(REMOVE_AT ll 0 1)
+message(STATUS "${ll}")
+list(REMOVE_ITEM ll v)
+message(STATUS "${ll}")
+
+# 内部实现排序算法
+function(SORT_DEMO para)
+set(temp ${para})
+list(SORT ${temp})
+message(STATUS "${${temp}}")
+set(${para} ${${temp}} PARENT_SCOPE)
+endfunction(SORT_DEMO)
+
+set(l2 d c b a)
+SORT_DEMO(l2)
+message(STATUS "${l2}")
+
+# STRING相关测试用例实现
+# 获取当前时间信息
+STRING(TIMESTAMP time_now "%Y-%m-%dT%H:%M:%S")
+message(STATUS "time_now:${time_now}")
+
+# file相关操作命令总结
+# file(WRITE demo1.cpp "#include <iostream>\nvoid func(){}")
+# # file(SHA1 \"${CMAKE_CURRENT_SOURCE_FILE}/demo1.cpp\" sha_file)
+# message(STATUS "sha_file:${sha_file}")
+# file(READ demo1.cpp read_info LIMIT 1024 OFFSET 10)
+# message(STATUS "read_info:${read_info}")
+# file(STRINGS demo1.cpp read_strings NEWLINE_CONSUME)
+# message(STATUS "read_strings:${read_strings}")
+# 
+# file(GLOB srs RELATIVE ${CMAKE_CURRENT_LIST_DIR} "*.cpp")
+# file(GLOB_RECURSE all_fils RELATIVE ${CMAKE_CURRENT_LIST_DIR} "*.cpp")
+# file(GLOB_RECURSE new_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cpp")
+# message(STATUS "srs:${srs}")
+# message(STATUS "all_fils:${all_fils}")
+# message(STATUS "new_files:${new_files}")
+# 
+# file(MAKE_DIRECTORY test_file)
+# file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/test_file/test1.cpp "void test1(){}")
+# file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/test_file/test2.cpp "void test2(){}")
+# file(RENAME ${CMAKE_CURRENT_SOURCE_DIR}/test_file/test2.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test_file/test3.cpp)
+# file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/test_file/test3.cpp)
+# file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/test_file/demo4.cpp "void test4(){}")
+# # 获取文件时间信息
+# file(TIMESTAMP ${CMAKE_CURRENT_SOURCE_DIR}/test_file/demo4.cpp tmp_stamp "%Y-%m-%d %H:%M:%S" UTC)
+# message(STATUS ${tmp_stamp})
+# #file(REMOVE_RECURSE ${CMAKE_CURRENT_SOURCE_DIR}/test_file)
+# file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_file DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/test_demo FILES_MATCHING PATTERN "*.cpp")
+# file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test_file/test1.cpp DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/test_demo FILES_MATCHING PATTERN "*.cpp")
+# file(INSTALL ${CMAKE_CURRENT_SOURCE_DIR}/test_file/demo4.cpp DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/test_demo FILES_MATCHING PATTERN "*.cpp")
+# file(MAKE_DIRECTORY test_demo)
+# file(DOWNLOAD www.baidu.com ${CMAKE_CURRENT_SOURCE_DIR}/baidu.html)
+# file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/baidu.html" local_cmake_path)
+# message(STATUS "local_cmake_path:${local_cmake_path}")
+# file(TO_NATIVE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/baidu.html" native_cmake_path)
+# message(STATUS "native_cmake_path:${native_cmake_path}")
+# # 产生在构建二进制的路径下
+# file(GENERATE OUTPUT gener_file.cpp CONTENT "genrifieweie " )
+
+# STRING 相关字符串测试
+# 字符串查询 输入全部都是在最后面
+set(str "demodmoe helo dehehehe hehe")
+string(FIND ${str} "he" pos)
+string(REPLACE " " "#" new_str ${str})
+message(STATUS "pos:${pos}")
+message(STATUS "new_str:${new_str}")
+string(REGEX MATCH "he" match_str ${str})
+message(STATUS ${match_str})
+string(REGEX MATCHALL "he" match_all_str ${str})
+message(STATUS ${match_all_str})
+string(REGEX REPLACE " he" "#me" match_rep_str ${str})
+message(STATUS ${match_rep_str})
+
+# 字符串操作 全部都是在前面
+string(APPEND str " # append test")
+message(STATUS ${str})
+string(PREPEND str "# prepend test #")
+message(STATUS ${str})
+string(CONCAT str ${str} "#concat #")
+message(STATUS ${str})
+set(l3 ab bd cd)
+#string(JOIN "##" join_str "${l3}")
+#message(STATUS ${join_str})
+
+string(TOLOWER ${str} low_str)
+message(STATUS ${low_str})
+string(TOUPPER ${str} up_str)
+message(STATUS ${up_str})
+string(LENGTH ${str} len)
+message(STATUS "len:${len}")
+string(SUBSTRING "${str}" 0 1 sub_str)
+message(STATUS "sub_str:${sub_str}")
+string(APPEND str "apend   ")
+message(STATUS "str:${str}")
+string(STRIP ${str} strip_str)
+message(STATUS "strip_str:${strip_str}")
+string(GENEX_STRIP <string> <out-var>)
+#string(REPEAT <string> <count> <out-var>)
+
+file(GLOB src_list "*.cpp")
+message(STATUS "src_list:${src_list}")
+add_library(file_demo OBJECT ${src_list})
+add_library(new_test SHARED $<TARGET_OBJECTS:file_demo>)
+#add_executable(all_test $<TARGET_OBJECTS:file_demo>)
+set_target_properties(new_test PROPERTIES 
+NAME_NEW "new_test lib so" 
+PATH_NEW "${CMAKE_CURRENT_SOURCE_DIR}/build"
+BOOL_NEW $<BOOL:"demo">)
+get_target_property(name new_test NAME_NEW)
+get_target_property(path new_test PATH_NEW)
+get_target_property(bool_new new_test BOOL_NEW)
+# 追加新的属性值
+get_property(all_name TARGET new_test PROPERTY NAME_NEW)
+set_property(TARGET new_test APPEND PROPERTY NAME_NEW "set_property")
+get_property(new_all TARGET new_test PROPERTY NAME_NEW)
+message("name:${name}")
+message("path:${path}")
+message("bool_new:${bool_new}")
+message("all_name:${all_name}")
+message("new_all:${new_all}")
+
+set_target_properties(demo1 PROPERTIES DEMO_NAME "demo anem test" DEMO_AGE "demo agegege")
+get_property(demo_name TARGET demo1 PROPERTY DEMO_NAME)
+message("demo_name:${demo_name}")
+get_target_property(demo_age demo1 DEMO_AGE)
+message("demo_age:${demo_age}")
+
+# 测试全局变量属性
+define_property(GLOBAL INHERITED BRIEF_DOCS "设置全局变量" FULL_DOCS "试试全局变量的属性" PROPERTY GLOBAL_NAME)
+set_property(GLOBAL PROPERTY GLOBAL_NAME "ni caciwowo")
+get_property(glb_prop GLOBAL PROPERTY GLOBAL_NAME)
+message(STATUS "glb_prop:${glb_prop}")
+
+set(lis_yest aa d d d d d)
+LIST(REMOVE_DUPLICATES lis_yest)
+list(APPEND lis_yest aede dewfaf dada)
+message(STATUS "lis_yest:${lis_yest}")
+LIST(REMOVE_ITEM lis_yest d)
+message(STATUS "lis_yest:${lis_yest}")
