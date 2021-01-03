@@ -7,3 +7,5 @@ https://blog.csdn.net/liyu1059915776/article/details/83384274
 [attribute^=value]	匹配属性值以指定值开头的每个元素。
 [attribute$=value]	匹配属性值以指定值结尾的每个元素。
 [attribute*=value]	匹配属性值中包含指定值的每个元素。
+
+https://www.cnblogs.com/cddqs/p/9797364.html
