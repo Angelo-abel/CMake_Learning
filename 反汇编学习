@@ -1,0 +1,136 @@
+汇编语言理解指针（指针就是汇编的间接寻址，其实就是一个简单方便的运算指令，计算完毕直接就赋值，不是从内存中去取值后赋值）
+有空自己也写一个学习笔记，先把参考文章记下了：
+
+http://www.cnblogs.com/aguncn/archive/2012/11/14/2769989.html
+http://www.cnblogs.com/aguncn/archive/2012/11/14/2769814.html
+
+http://segmentfault.com/q/1010000000627497
+
+http://blog.csdn.net/herecles/article/details/6080226
+
+我的理解：指针就是使用mov方法的间接寻址。想要明白指针，必须懂得LEA和MOV指令的区别。然后就觉得已经豁然开朗。
+
+mov 和 lea 的区别
+
+mov ecx,[eax+0x30]表示先运算eax+0x30得到一个结果,以这个结果为地址找一个ecx长度的内存数赋给ecx
+lea ecx,[eax+0x30]表示先运算eax+0x30得到一个结果,把这个结果(mov时地址)赋给ecx
+效果为ecx=eax+0x30 (这里eax参与了运算却没有改变值)
+dword 双字 就是四个字节
+ptr pointer缩写 即指针
+[]里的数据是一个地址值，这个地址指向一个双字型数据
+比如mov eax, dword ptr [12345678] 把内存地址12345678中的双字型（32位）数据赋给eax
+
+----------------------------------------------------
+MOV与LEA的区别
+可以说，mov 这个汇编指令在 汇编语言程序中是 非常 非常常见的一个指令. 打个最简单的比方,就好比我
+们人要每天 说话一样..在汇编语言中,Mov 指令就好比 我们人要每天说话一样。 每一个程序都离不开 Mov
+指令。
+Mov指令：
+传送指令，可以用于传送寄存器，也可以用于传送内存地址.
+lea指令：
+传送指令。
+
+如果是刚刚学习 汇编语言的朋友，看到上面的解释一定会很疑惑，Mov 和 Lea都是传送指令，那么它们直
+接的区别在哪里？
+下面详细 解释 Mov 与Lea 汇编指令的区别.
+先作举一个生活中的例子, 比如你要坐车去电影院,你可以告诉司机电影院的地址,然后司机根据地址将你送
+到电影院. 你还可以,告诉司机电影院的名字,司机通过名字 将你送到电影院. 我们用这两种方式都可以 顺
+利的到达 自己想到底的电影院.
+Mov 和lea 的作用就是像上面例子说的一样.用不同的方式(传送方式),达到同一个目的(传送数据).换句话
+说,Mov 指令传送方式,是将存放内存数据的地址进行传送. 而Lea则是恰恰相反,Lea是直接将内存数据进行传
+递.
+下面用一个例子说明 lea与mov 的区别：
+mov ecx,30
+add ecx,eax
+----------------------------------------------------
+lea ecx,[eax+30]
+----------------------------------------------------
+mov ecx,[eax+30]表示先运算eax+30得到一个结果，以这个结果为地址传递到一个ecx长度的内存地址存放ecx
+lea ecx,[eax+30]表示先运算eax+30得到一个结果，把这个结果传递到ecx中。相当于ecx=eax+30
+
+希望这篇文章 能够帮助正在 为mov 和lea区别而烦恼的朋友们. 这篇文章花费 2个晚上，完成排版，整理。
+
+1 . MOV 的右值必须是常量，而不能是表达式，比如 可以写MOV EAX, EBP，但不能写MOV EAX, EBP + 8
+这是因为EBP + 8本身也需要一条指令来计算，所以不能跟MOV写在一条指令里。
+
+2 . 注意到在汇编指令的内存地址符 [ ] 内可以做算术运算，那是因为内存地址的计算在CPU里是由专门的处理单元AGU来处理的，并不占用算术运算单元ALU的时钟周期。但如果用MOV 接内存地址符号[]的话，会把[]里的地址指向的内存的内容取出来放入寄存器。 比如 mov eax,[ebx+ecx*4h-20h]，会把ebx+ecx*4h-20h计算的结果当成一个内存地址，然后去内存把该地址的内容取出送往eax。
+
+3 . 如果我们只是想得到算术运算结果怎么办呢？这时候就可以用到LEA指令了。因为LEA后面接内存地址符[]会把地址，而不是地址里的内容送入寄存器。比如，我们想计算ebx+ecx*4h-20h的结果，就可以这样写： lea eax,[ebx+ecx*4h-20h]。当然如果不用lea指令也可以达到目的，不过那样写起来就麻烦多了： imul ecx, 4 add ebx, ecx sub ebx, 20h mov eax, ebx
+
+----------------------------------------------------
+
+死记硬背：
+
+复制代码
+#include "stdafx.h"
+#include <iostream>
+
+using namespace std; 
+
+void myfun()
+{
+    int num = 5;
+    int *ptr = &num;
+    std::cout << *ptr << std::endl;
+}
+
+int main(){
+    myfun();
+    return 0;
+}
+复制代码
+对应的汇编（VC6）：
+
+复制代码
+void myfun()
+13:   {
+00401780   push        ebp
+00401781   mov         ebp,esp
+00401783   sub         esp,48h
+00401786   push        ebx
+00401787   push        esi
+00401788   push        edi
+00401789   lea         edi,[ebp-48h]
+0040178C   mov         ecx,12h
+00401791   mov         eax,0CCCCCCCCh
+00401796   rep stos    dword ptr [edi]
+14:       int num = 5;
+00401798   mov         dword ptr [ebp-4],5  // 把5放到ebp-4这个地址的内存中去
+15:       int *ptr = &num;
+0040179F   lea         eax,[ebp-4] // 计算ebp-4的值，并把这个地址值放到eax里，就这么简单！
+004017A2   mov         dword ptr [ebp-8],eax // 给ptr分配了一块内存（大小为4，地址是ebp-8），并把eax里的值放作为内容，放到这个新分配的内存里。
+16:       std::cout << *ptr << std::endl;
+004017A5   push        offset @ILT+200(std::endl) (004010cd)
+004017AA   mov         ecx,dword ptr [ebp-8]
+004017AD   mov         edx,dword ptr [ecx]
+004017AF   push        edx
+004017B0   mov         ecx,offset std::cout (0047c0c0)
+004017B5   call        @ILT+255(std::basic_ostream<char,std::char_traits<char> >::operator<<) (00401104)
+004017BA   mov         ecx,eax
+004017BC   call        @ILT+480(std::basic_ostream<char,std::char_traits<char> >::operator<<) (004011e5)
+17:   }
+004017C1   pop         edi
+004017C2   pop         esi
+004017C3   pop         ebx
+004017C4   add         esp,48h
+004017C7   cmp         ebp,esp
+004017C9   call        __chkesp (00406830)
+004017CE   mov         esp,ebp
+004017D0   pop         ebp
+004017D1   ret
+复制代码
+ lea的英文解释是： Load Effective Address. 这个有效地址是指，四则运算后得到有效地址，然后就赋值，并不是从某个有效地址里去取数据。
+
+ -------------------------------------------------------
+
+下一句是pointer = &count;，将pointer指向count的内存地址，我们看对应的汇编代码：
+
+代码:
+lea         eax,[ebp-4]
+mov         dword ptr [ebp-0Ch],eax
+前面说过，ebp-4是count变量的内存地址，为了直观点，我把上面的汇编代码改一下：
+
+代码:
+lea         eax,[count]
+mov         dword ptr [pointer],eax
+lea指令就是把一个内存变量有效的地址传送给指定的寄存器。第一句lea   eax,[ebp-4]是把count的地址传到eax寄存器，根据刚才在Watch窗口中看到的count地址是0012ff7c，那么eax里面的值就是0012ff7c。第二句mov   dword ptr [ebp-0Ch],eax是把eax中的值传到ebp-0Ch（pointer）中。很明显，pointer = &count;这句代码就等同于pointer = 0012ff7c;。
