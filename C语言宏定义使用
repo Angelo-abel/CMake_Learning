@@ -1,0 +1,93 @@
+C中的宏的使用(宏嵌套/宏展开/可变参数宏)
+原创
+SamXIAO
+日常记录
+2018/11/17 21:57
+阅读数 5.5K
+基本原则：
+在展开当前宏函数时，如果形参有#或##则不进行宏参数的展开，否则先展开宏参数，再展开当前宏。
+
+#是在定义两边加上双引号
+#define _TOSTR(s) #s
+
+printf(_TOSTR(test ABC))
+printf(_TOSTR("test ABC"));
+printf(_TOSTR(_TOSTR(test ABC)));
+
+==================
+预编译结果：
+printf("test ABC")
+printf("\"test ABC\"");
+printf("_TOSTR(test ABC)");
+##是原样代入
+ 
+
+#define HI_BOY HiBoy!
+#define __ORIGINAL(s) s
+#define _TOSTR(s) #s
+#define STR_CONCAT(x, y) x##y
+
+printf(HI_BOY);
+printf(__ORIGINAL(HI_BOY));
+printf(_TOSTR(HI_BOY));
+printf(_TOSTR(__ORIGINAL(HI_BOY)));
+printf(STR_CONCAT(HI_BOY, HI_BOY ));
+printf(STR_CONCAT(_TOSTR(HI_BOY), _TOSTR(HI_BOY) ));
+===========================================================
+预处理后的结果：
+printf(HiBoy!);
+printf(HiBoy!);
+printf("HI_BOY");
+printf("__ORIGINAL(HI_BOY)");
+printf(HI_BOYHI_BOY);
+printf("HI_BOY" "HI_BOY");
+连续的两个双引号会被忽略掉
+以下写法结果一样：
+
+printf("this is a test sentence. are you ok?\n");
+printf("this is a test ""sentence."" are you ok?\n");
+printf("this is a test sentence."   " are you ok?\n");
+printf("this is a"           " test ""sentence. are"" you ok?\n");
+
+==============
+this is a test sentence. are you ok?
+this is a test sentence. are you ok?
+this is a test sentence. are you ok?
+this is a test sentence. are you ok?
+嵌套
+#define  QUOTATION "
+#define HI_BOY HiBoy!
+#define __ORIGINAL(s) s
+#define _TOSTR(s) #s
+#define STR_CONCAT(x, y) x##y
+
+printf(HI_BOY);
+printf(__ORIGINAL(HI_BOY));
+printf(_TOSTR(HI_BOY));
+printf(_TOSTR(__ORIGINAL(HI_BOY)));
+printf(STR_CONCAT(HI_BOY, HI_BOY ));
+printf(STR_CONCAT( _TOSTR(HI_BOY), _TOSTR(HI_BOY) ));
+printf(                  STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) ));
+printf(           _TOSTR(STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) )));
+printf(_TOSTR(__ORIGINAL(STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) ))));
+printf(           ""(STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) ))"");
+printf(_TOSTR(__ORIGINAL(STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) ))));
+printf(           QUOTATION(STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) ))QUOTATION);
+printf(           QUOTATION STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) )QUOTATION);
+
+
+==================================================
+预编译结果：
+printf(HiBoy!);
+printf(HiBoy!);
+printf("HI_BOY");
+printf("__ORIGINAL(HI_BOY)");
+printf(HI_BOYHI_BOY);
+printf("HI_BOY" "HI_BOY");
+printf(                  HiBoy!HiBoy!);
+printf(           "STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) )");
+printf("__ORIGINAL(STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) ))");
+printf(           ""(HiBoy!HiBoy!)"");
+printf("__ORIGINAL(STR_CONCAT( __ORIGINAL(HI_BOY), __ORIGINAL(HI_BOY) ))");
+printf(           "(HiBoy!HiBoy!)");
+printf(           " HiBoy!HiBoy! ");
