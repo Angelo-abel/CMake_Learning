@@ -1,0 +1,169 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+template<typename T>
+void prinMaxtrix(T &t)
+{
+    for_each(t.begin(), t.end(), [](int a){cout << a << " ";});
+}
+
+void swap(int *arr, int i, int j)
+{
+    arr[i] = arr[i] ^ arr[j];
+    arr[j] = arr[i] ^ arr[j];
+    arr[i] = arr[i] ^ arr[j];
+}
+
+void bublesort(int *arr, int len)
+{
+    for (int i = 0; i < len; i++) {
+        for (int j = 0; j < len - i - 1; j++) {
+            if (arr[j + 1] < arr[j])
+                swap(arr, j, j+ 1);
+        }
+    }
+}
+void insertsort(int *arr, int len)
+{
+    for (int i =  1; i < len; i++) {
+        int j = i - 1;
+        int temp = arr[i];
+        // 插入排序判断条件
+        while (j >= 0 && temp > arr[j]) {
+            arr[j + 1] = arr[j];
+            j--;
+        }
+        // 需要插入元素的位置
+        arr[j + 1] = temp;
+    }
+}
+
+void selectsort(int *arr, int len)
+{
+    for (int i = 0; i < len -1; i++) {
+        int min = i;
+        for (int j = i + 1; j < len; j++) {
+            if (arr[min] > arr[j])
+                min = j;
+        }
+        if (min != i) {
+            swap(arr, min, i);
+        }
+    }
+}
+
+void selectsortme(int *arr, int len)
+{
+    for (int i = 0; i < len - 1; i++) {
+        int min = i;
+        for (int j = i + 1; j < len; j++) {
+            if (arr[min] > arr[j])
+                min = j;
+        }
+        if (min != i)
+            swap(arr, min, i);
+    }
+}
+
+void heapify(int *arr, int idx, int len)
+{
+    int parent = idx;
+    int child = (parent << 1) + 1;
+    while (child < len) {
+        if ((child + 1) < len && arr[child + 1] > arr[child])
+            child++;
+        if (arr[parent] > arr[child])
+            break;
+        swap(arr, parent, child);
+        parent = child;
+        child = (child << 1) + 1;
+    }
+}
+void buildheap(int *arr, int len)
+{
+    for (int i = (len >> 1) - 1; i >= 0; i--)
+        heapify(arr, i, len);
+}
+
+void heapsort(int *arr, int len)
+{
+    buildheap(arr, len);
+    for (int i = len - 1; i > 0; i--) {
+        swap(arr, 0, i);
+        heapify(arr, 0, i);
+    }
+}
+
+void quicksort(int *arr, int left, int right)
+{
+    if (left >= right)
+        return;
+    int i = left, j = right;
+    int base = arr[left];
+    while (i < j) {
+        while (i < j && arr[j] >= base)
+            j--;
+        while (i < j && arr[i] <= base)
+            i++;
+        if (i < j)
+            swap(arr, i, j);
+    }
+    // 基准数归位
+    arr[left] = arr[i];
+    arr[i] =  base;
+    quicksort(arr, left, i - 1);
+    quicksort(arr, i + 1, right);
+}
+
+void merge(int *arr, int len)
+{
+    int i = 0;
+    int mid = len >> 1;
+    int j = mid;
+    int temp[len];
+    int b = 0;
+    while (i < mid && j < len)
+    {
+        if (arr[i] <= arr[j])
+            temp[b++] = arr[i++];
+        else
+            temp[b++] = arr[j++];
+    }
+    while (i < mid)
+        temp[b++] = arr[i++];
+    while (j < len)
+        temp[b++]= arr[j++];
+    
+    // 将临时数组还原
+    copy(temp, temp + len, arr);
+}
+
+void mergesort(int *arr, int len)
+{
+    if (len <= 1)
+        return;
+    else {
+        int mid = len >> 1;
+        mergesort(arr, mid);
+        mergesort(arr + mid, len - mid);
+        merge(arr, len);
+    }
+}
+// 希尔排序
+void test1()
+{
+    vector<int> nums;
+    for (int i = 0; i < 10; i++) {
+        nums.push_back(rand() % 100);
+    }
+    // selectsort(&nums[0], nums.size());
+    // bublesort(&nums[0], nums.size());
+    // mergesort(&nums[0], nums.size());
+    quicksort(&nums[0], 0, nums.size() -1);
+    prinMaxtrix(nums);
+}
+int main(int argc, char *argv[])
+{
+    test1();
+    return 0;
+}
